@@ -1,40 +1,73 @@
 from tkinter import *
+from socket import *
+from _thread import *
 
-import socket, json
+
+import json, random
 HOST = '127.0.0.1'
 PORT = 8080
 
+ws = Tk();
+ws.title('Game')
+currentId = 0;
 
 players = []
 
-def toDict(data):
-    result = dict((a.strip(), int(b.strip()))  
-                     for a, b in (element.split('-')  
-                                  for element in data.split(', ')))  
-    return result
 
-class game(Canvas):
-    def __init__(self):
-        super().__init__(
-            width=1000,
-            height=700,
-            background='#f1f1f1'
-        )
+playerCharacters = []
 
 
-
-        self.pack()
-
-    def connect(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+def connect():
+            s = socket();
             s.connect((HOST, PORT))
-            data = s.recv(1024)
-            print(data)
+            return s
 
-ws = Tk();
-ws.title('Game')
+gameCanvas = Canvas(ws, width=1000, height=700)
+gameCanvas.pack()
+
+def getThreads():
+    while True:
+        data = s.recv(1024)
+        loadedData = json.loads(data)
+        if(loadedData["type"] == 'newConnection'):
+            print("new")
+            global currentId
+            currentId = loadedData['id']
+            
+            data = gameCanvas.create_oval(
+                    loadedData["coords"]["x"], loadedData["coords"]["y"], 
+                    loadedData["coords"]["x"] + 10, loadedData["coords"]["y"] + 10,  
+                 )
+            s.send(json.dumps(data).encode())
+
+
+            
+        
+
+
+def keyPressed(event):
+    print(currentId)
+    gameCanvas.move(playerCharacters[currentId - 1], -50, 0)
+    data = {
+        "id": currentId,
+        "type": "move",
+        "coords" : {
+            "x": random.randrange(0, 300),
+            "y": random.randrange(0, 300),
+        }
+    }
+
+    s.send(json.dumps(data).encode())
+
+s = connect();
+start_new_thread(getThreads, ())
+
+
+ws.bind_all('<Key>', keyPressed)
+
 ws.resizable(False, False)
 
-game = game()
-game.connect()
+
+
+
 ws.mainloop()

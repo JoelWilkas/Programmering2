@@ -15,6 +15,10 @@ def threaded_client(connection):
         data = json.dumps(c[1])
         c[0].send(data.encode())
 
+    while True:
+        data = connection.recv(1024);
+        print(data)
+
 
 
 from _thread import *
@@ -34,11 +38,14 @@ while True:
     
     client = {
         "id": ids + 1,
+        "type": "newConnection",
         "coords" : {
             "x": random.randrange(0, 300),
             "y": random.randrange(0, 300),
         }
     }
+
+    ids += 1
     
     connections.append([conn, client])
     threadCount += 1
