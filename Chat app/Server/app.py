@@ -13,8 +13,9 @@ def connect(sid, environ):
 def disconnect(sid):
     print(sid, 'disconnected')
 
-@sio.on("message")
-def getMessage(sid, data):
+@sio.on('message_client')
+def message_client(sid, data):
     print(data)
+    sio.emit('message_server', data)
 
 
