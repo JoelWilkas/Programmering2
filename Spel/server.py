@@ -12,12 +12,17 @@ def startServer():
 
 def threaded_client(connection):
     for c in connections:
-        data = json.dumps(c[1])
+        data = json.dumps([c[1], "newConnection"])
         c[0].send(data.encode())
 
     while True:
         data = connection.recv(1024);
-        print(data)
+        loadedData = json.loads(data)
+        
+        if(loadedData[1] == "move"):
+            for c in connections:
+                c[0].send(data)
+
 
 
 
@@ -25,7 +30,8 @@ from _thread import *
 s = startServer()
 threadCount = 0;
 ids = 0;
-
+clients = []
+colors = ["red", "blue"]
 connections = []
 
 while True:
@@ -38,15 +44,17 @@ while True:
     
     client = {
         "id": ids + 1,
-        "type": "newConnection",
         "coords" : {
-            "x": random.randrange(0, 300),
-            "y": random.randrange(0, 300),
-        }
+            "x": round(random.randrange(0, 1000)),
+            "y": round(random.randrange(0, 700)),
+        },
+        "color": random.choice(colors)
     }
+    clients.append(client)
 
     ids += 1
+    print(clients)
     
-    connections.append([conn, client])
+    connections.append([conn, clients])
     threadCount += 1
 

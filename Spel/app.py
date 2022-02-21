@@ -4,6 +4,7 @@ from _thread import *
 
 
 import json, random
+from turtle import right
 HOST = '127.0.0.1'
 PORT = 8080
 
@@ -13,8 +14,12 @@ currentId = 0;
 
 players = []
 
+moveSpeed = 10
+playerList = []
+currentX = 0
+currentY = 0
 
-playerCharacters = []
+
 
 
 def connect():
@@ -25,39 +30,96 @@ def connect():
 gameCanvas = Canvas(ws, width=1000, height=700)
 gameCanvas.pack()
 
+alreadyConnected = False
+
 def getThreads():
     while True:
         data = s.recv(1024)
         loadedData = json.loads(data)
-        if(loadedData["type"] == 'newConnection'):
-            print("new")
-            global currentId
-            currentId = loadedData['id']
+        if(loadedData[1] == 'newConnection'):
+            global currentX, currentY, currentId, alreadyConnected
+            for x in range(currentId, len(loadedData[0])):
+                print("amogus")
+                data = gameCanvas.create_oval(
+                        loadedData[0][x]["coords"]["x"], loadedData[0][x]["coords"]["y"], 
+                        loadedData[0][x]["coords"]["x"] + 10, loadedData[0][x]["coords"]["y"] + 10, fill=loadedData[0][x]["color"]
+                )
+                
+                currentX = loadedData[0][x]["coords"]["x"]
+                currentY = loadedData[0][x]["coords"]["y"]
+                playerList.append(data)
+
+            if(alreadyConnected == False):
+                currentId = len(loadedData[0])
+                alreadyConnected = True
+
+            print(currentId)
+        if(loadedData[1] == "move"):
             
-            data = gameCanvas.create_oval(
-                    loadedData["coords"]["x"], loadedData["coords"]["y"], 
-                    loadedData["coords"]["x"] + 10, loadedData["coords"]["y"] + 10,  
-                 )
-            s.send(json.dumps(data).encode())
+            print(playerList[currentId - 1])
 
-
-            
-        
-
-
+            if(loadedData[0]["dir"] == "left"):
+                gameCanvas.move(playerList[loadedData[0]["id"] - 1], -moveSpeed, 0)
+            if(loadedData[0]["dir"] == "right"):
+                gameCanvas.move(playerList[loadedData[0]["id"] - 1], moveSpeed, 0)
+            if(loadedData[0]["dir"] == "up"):
+                gameCanvas.move(playerList[loadedData[0]["id"] - 1], 0, -moveSpeed)
+            if(loadedData[0]["dir"] == "down"):
+                gameCanvas.move(playerList[loadedData[0]["id"] - 1], 0, moveSpeed)
 def keyPressed(event):
-    print(currentId)
-    gameCanvas.move(playerCharacters[currentId - 1], -50, 0)
-    data = {
-        "id": currentId,
-        "type": "move",
-        "coords" : {
-            "x": random.randrange(0, 300),
-            "y": random.randrange(0, 300),
-        }
-    }
+    
+    global currentX, currentY
+    
 
-    s.send(json.dumps(data).encode())
+    print(event.keysym)
+    if(event.keysym == "Left"):
+        currentX -= moveSpeed
+        data = {
+            "id": currentId,
+            "coords" : {
+                "x": currentX,
+                "y": currentY,
+            },
+            "dir": "left"
+        }
+        s.send(json.dumps([data, "move"]).encode())
+    elif(event.keysym == "Right"):
+        currentX += moveSpeed
+        data = {
+            "id": currentId,
+            "coords" : {
+                "x": currentX,
+                "y": currentY,
+            },
+            "dir": "right"
+        }
+        s.send(json.dumps([data, "move"]).encode())
+    elif(event.keysym == "Up"):
+        currentY -= moveSpeed
+        data = {
+            "id": currentId,
+            "coords" : {
+                "x": currentX,
+                "y": currentY,
+            },
+            "dir": "up"
+        }
+        s.send(json.dumps([data, "move"]).encode())
+    elif(event.keysym == "Down"):
+        currentY += moveSpeed
+        data = {
+            "id": currentId,
+            "coords" : {
+                "x": currentX,
+                "y": currentY,
+            },
+            "dir": "down"
+        }
+        s.send(json.dumps([data, "move"]).encode())
+
+
+
+    
 
 s = connect();
 start_new_thread(getThreads, ())
