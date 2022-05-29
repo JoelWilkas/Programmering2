@@ -1,0 +1,6 @@
+Ladda ner modules med "npm i"
+
+skapa databas med namnet "todo"
+
+kör programmet med "npm start"
+Severn körs på port 8080
